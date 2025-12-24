@@ -1,0 +1,20 @@
+-- 表 1: 类别表 (比如: 饮料、主食)
+CREATE TABLE Categories (
+    id INT PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+-- 表 2: 商品表 (用 category_id 关联到上面的表)
+CREATE TABLE Products (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    price DECIMAL(10, 2),
+    category_id INT
+);
+INSERT INTO Categories VALUES (1, '饮料'), (2, '主食');
+INSERT INTO Products VALUES (101, '可乐', 3.50, 1), (102, '汉堡', 15.00, 2);
+
+-- 核心技能：查出商品名字及其对应的类别名字
+SELECT Products.name, Categories.name 
+FROM Products 
+JOIN Categories ON Products.category_id = Categories.id;
