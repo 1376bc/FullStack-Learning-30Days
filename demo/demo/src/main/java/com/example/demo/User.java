@@ -1,15 +1,19 @@
 package com.example.demo;
 
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "Users") // 对应数据库里的表名
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @NotBlank(message = "用户名不能为空")
+    @Size(min = 2,max = 20,message="名字长度必须在2-20之间")
     private String username;
+    @Email(message = "邮箱格式不正确")
     private String email;
 
     // 必须有无参构造函数（JPA要求）

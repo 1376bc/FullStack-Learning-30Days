@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>我的全栈系统 - 用户列表</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="container mt-5">
+<h2 class="mb-4">学生管理系统</h2>
+
+<!-- 添加学生表单 -->
+<div class="card p-3 mb-4">
+  <h5>添加新学生</h5>
+  <div class="row g-3">
+    <div class="col-sm-5">
+      <input type="text" id="newName" class="form-control" placeholder="输入姓名">
+    </div>
+    <div class="col-sm-5">
+      <input type="email" id="newEmail" class="form-control" placeholder="输入邮箱">
+    </div>
+    <div class="col-sm-2">
+      <button class="btn btn-success w-100" id="submitBtn" onclick="addUser()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 搜索和刷新 -->
+<div class="d-flex mb-3 mt-3">
+  <button class="btn btn-primary me-2" onclick="resetSearch()">刷新全部</button>
+  <input type="text" id="searchInput" class="form-control w-25" placeholder="按姓名搜索..." oninput="searchHandler()">
+</div>
+
+<!-- 数据表格 -->
+<table class="table table-striped table-bordered">
+  <thead class="table-dark">
+  <tr>
+    <th>ID</th>
+    <th>姓名</th>
+    <th>邮箱</th>
+    <th>操作</th>
+  </tr>
+  </thead>
+  <tbody id="user-table-body"></tbody>
+</table>
+
+<!-- 【关键：补全分页 UI】 -->
+<div class="mt-3 d-flex justify-content-between align-items-center">
+  <div>
+    <span id="pageInfo" class="fw-bold">第 1 页</span>
+  </div>
+  <nav>
+    <ul class="pagination mb-0">
+      <li class="page-item"><button class="btn btn-outline-secondary me-2" id="prevBtn" onclick="changePage(-1)">上一页</button></li>
+      <li class="page-item"><button class="btn btn-outline-secondary" id="nextBtn" onclick="changePage(1)">下一页</button></li>
+    </ul>
+  </nav>
+</div>
+
+<script>
+  // --- 1. 全局变量定义 ---
+  let currentPage = 0;
+  let currentEditId = null;
+
+  window.onload = loadUsers;
+
+  // --- 2. 加载数据逻辑 ---
+  async function loadUsers() {
+    const keyword = document.getElementById('searchInput').value;
+    try {
+      const url = `http://localhost:8080/users?page=${currentPage}&size=5&search=${encodeURIComponent(keyword)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("后端响应错误");
+
+      const result = await response.json();
+      const users = result.content; // 获取分页内的数组
+
+      const tableBody = document.getElementById('user-table-body');
+      tableBody.innerHTML = '';
+
+      users.forEach(user => {
+        const row = `<tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="prepareUpdate(${user.id}, '${user.username}', '${user.email}')">修改</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">删除</button>
+                    </td>
+                </tr>`;
+        tableBody.innerHTML += row;
+      });
+
+      // 更新分页UI
+      document.getElementById('pageInfo').innerText = `第 ${result.number + 1} / ${result.totalPages || 1} 页`;
+      document.getElementById('prevBtn').disabled = result.first;
+      document.getElementById('nextBtn').disabled = result.last;
+
+    } catch (error) {
+      console.error('加载失败:', error);
+      Swal.fire('错误', '无法从后端加载数据，请检查 Java 是否启动', 'error');
+    }
+  }
+
+  // --- 3. 搜索和翻页逻辑 ---
+  function searchHandler() {
+    currentPage = 0; // 搜索时重置回第一页
+    loadUsers();
+  }
+
+  function resetSearch() {
+    document.getElementById('searchInput').value = '';
+    currentPage = 0;
+    loadUsers();
+  }
+
+  function changePage(step) {
+    currentPage += step;
+    loadUsers();
+  }
+
+  // --- 4. CRUD 操作逻辑 ---
+  async function addUser() {
+    const name = document.getElementById('newName').value;
+    const email = document.getElementById('newEmail').value;
+
+    if(!name || !email) {
+      Swal.fire('提示', '请完整填写姓名和邮箱！', 'info');
+      return;
+    }
+
+    const response = await fetch('http://localhost:8080/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email: email })
+    });
+
+    if(response.ok) {
+      Swal.fire({ icon: 'success', title: '成功!', timer: 1500 });
+      document.getElementById('newName').value = '';
+      document.getElementById('newEmail').value = '';
+      loadUsers();
+    }
+  }
+
+  async function deleteUser(id) {
+    const result = await Swal.fire({
+      title: '确定要删除吗?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '删掉它!'
+    });
+
+    if (result.isConfirmed) {
+      await fetch(`http://localhost:8080/users/${id}`, { method: 'DELETE' });
+      Swal.fire('已删除!', '', 'success');
+      loadUsers();
+    }
+  }
+
+  function prepareUpdate(id, name, email) {
+    currentEditId = id;
+    document.getElementById('newName').value = name;
+    document.getElementById('newEmail').value = email;
+    const btn = document.getElementById('submitBtn');
+    btn.innerText = "保存修改";
+    btn.className = "btn btn-warning w-100";
+    btn.onclick = updateUser; // 注意这里直接赋值函数名
+  }
+
+  async function updateUser() {
+    const name = document.getElementById('newName').value;
+    const email = document.getElementById('newEmail').value;
+
+    await fetch(`http://localhost:8080/users/${currentEditId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email: email })
+    });
+
+    Swal.fire('更新成功!', '', 'success');
+    resetForm();
+    loadUsers();
+  }
+
+  function resetForm() {
+    currentEditId = null;
+    document.getElementById('newName').value = '';
+    document.getElementById('newEmail').value = '';
+    const btn = document.getElementById('submitBtn');
+    btn.innerText = "提交";
+    btn.className = "btn btn-success w-100";
+    btn.onclick = addUser;
+  }
+</script>
+</body>
+</html>
