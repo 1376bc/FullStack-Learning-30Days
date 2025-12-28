@@ -16,6 +16,12 @@ import org.springframework.data.domain.Pageable;
 public class UserController {
 
     @Autowired
+    private ClassRepository classRepository;
+    @GetMapping("/classes")
+    public List<Clazz> getAllClasses() {
+        return classRepository.findAll();
+    }
+    @Autowired
     private UserRepository userRepository;
 // 保留转给个支持分页的方法即可
     @GetMapping("/users") // 访问路径
@@ -53,6 +59,10 @@ public class UserController {
                 .map(user -> {
                     user.setUsername(newUser.getUsername());
                     user.setEmail(newUser.getEmail());
+                    //关键：在这里加上班级更新的逻辑
+                    if(newUser.getClazz() != null) {
+                        user.setClazz(newUser.getClazz());
+                    }
                     return userRepository.save(user);
                 }).orElseGet(() -> {
                     newUser.setId(id);

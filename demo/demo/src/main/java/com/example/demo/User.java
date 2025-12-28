@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -18,7 +19,15 @@ public class User {
 
     // 必须有无参构造函数（JPA要求）
     public User() {}
-
+    @ManyToOne // 多个学生对应一个班级
+    @JoinColumn(name = "class_id") // 对应数据库的外键列
+    @JsonIgnoreProperties(
+            {"hibernateLazyInitializer","handler"}
+    )
+    private Clazz clazz;
+    // 更新 Getter 和 Setter
+    public Clazz getClazz() { return clazz; }
+    public void setClazz(Clazz clazz) { this.clazz = clazz; }
     // Getter 和 Setter (在 IDEA 里可以按 Alt+Insert 快速生成)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
