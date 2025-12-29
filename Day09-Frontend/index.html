@@ -69,82 +69,82 @@
   let currentPage = 0;
   let currentEditId = null;
 
-  window.onload =()=>{
-    loadClasses();
-    loadUsers();
+  // --- 2. 页面加载逻辑 ---
+  window.onload = async () => {
+    // 先检查登录
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+      window.location.href = 'login.html';
+      return;
+    }
+    // 登录了才加载数据
+    await loadClasses();
+    await loadUsers();
   };
 
-  // --- 2. 加载数据逻辑 ---
   async function loadClasses() {
     const select = document.getElementById('newClass');
-    //如果已经加载过（选项数量大于1），就不要再加载
-    if(select.options.length>1)return;
+    if(select.options.length > 1) return;
+
     try {
-      const response=await fetch('http://localhost:8080/classes');
-      const classes=await response.json();
-      select.innerHTML='<option value="">请选择班级</option>';
-      classes.forEach(c=>{
-        const option='<option value="${c.id}">${c.className}</option>';
-        select.innerHTML+=ooption;
+      const response = await fetch('http://localhost:8080/classes');
+      const classes = await response.json();
+
+      select.innerHTML = '<option value="">请选择班级</option>';
+      classes.forEach(c => {
+        // 【修复点1】：必须使用反引号 `
+        const option = `<option value="${c.id}">${c.className}</option>`;
+        // 【修复点2】：变量名必须匹配 option
+        select.innerHTML += option;
       });
-    }catch (error){
-      console.error('加载班级失败：',error)
+    } catch (error) {
+      console.error('加载班级失败：', error);
     }
   }
+
   async function loadUsers() {
     const keyword = document.getElementById('searchInput').value;
     try {
       const url = `http://localhost:8080/users?page=${currentPage}&size=5&search=${encodeURIComponent(keyword)}`;
       const response = await fetch(url);
-      if (!response.ok) throw new Error("后端响应错误");
-
       const result = await response.json();
-      const users = result.content; // 获取分页内的数组
+      const users = result.content;
 
       const tableBody = document.getElementById('user-table-body');
       tableBody.innerHTML = '';
 
       users.forEach(user => {
+        // 这里也要确保使用反引号
         const row = `<tr>
                     <td>${user.id}</td>
                     <td>${user.username}</td>
                     <td>${user.email}</td>
                     <td>${user.clazz ? user.clazz.className : '无'}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm" onclick="prepareUpdate(${user.id}, '${user.username}', '${user.email}',${user.clazz ? user.clazz.id : 'null'})">修改</button>
+                        <button class="btn btn-warning btn-sm" onclick="prepareUpdate(${user.id}, '${user.username}', '${user.email}', ${user.clazz ? user.clazz.id : 'null'})">修改</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">删除</button>
                     </td>
                 </tr>`;
         tableBody.innerHTML += row;
       });
 
-      // 更新分页UI
       document.getElementById('pageInfo').innerText = `第 ${result.number + 1} / ${result.totalPages || 1} 页`;
       document.getElementById('prevBtn').disabled = result.first;
       document.getElementById('nextBtn').disabled = result.last;
 
     } catch (error) {
       console.error('加载失败:', error);
-      Swal.fire('错误', '无法从后端加载数据，请检查 Java 是否启动', 'error');
+      Swal.fire('错误', '加载数据失败', 'error');
     }
   }
 
-  // --- 3. 搜索和翻页逻辑 ---
-  function searchHandler() {
-    currentPage = 0; // 搜索时重置回第一页
-    loadUsers();
-  }
+  // --- 3. 搜索和翻页 (保持你原来的代码即可) ---
+  function searchHandler() { currentPage = 0; loadUsers(); }
+  function resetSearch() { document.getElementById('searchInput').value = ''; currentPage = 0; loadUsers(); }
+  function changePage(step) { currentPage += step; loadUsers(); }
 
-  function resetSearch() {
-    document.getElementById('searchInput').value = '';
-    currentPage = 0;
-    loadUsers();
-  }
-
-  function changePage(step) {
-    currentPage += step;
-    loadUsers();
-  }
+  // --- 4. CRUD 操作 (保持你原来的代码) ---
+  // 注意：确保 addUser 和 updateUser 里的 fetch 地址是正确的
+  // ... (省略你已经写好的逻辑)
 
   // --- 4. CRUD 操作逻辑 ---
   async function addUser() {
@@ -228,6 +228,10 @@
     btn.innerText = "提交";
     btn.className = "btn btn-success w-100";
     btn.onclick = addUser;
+  }
+  function logout() {
+    localStorage.removeItem('isLoggedIn');
+    window.location.href = 'login.html';
   }
 </script>
 </body>
