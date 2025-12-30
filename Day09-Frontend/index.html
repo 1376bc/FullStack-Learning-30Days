@@ -34,6 +34,7 @@
 <!-- 搜索和刷新 -->
 <div class="d-flex mb-3 mt-3">
   <button class="btn btn-primary me-2" onclick="resetSearch()">刷新全部</button>
+  <button class="btn btn-success me-2" onclick="exportExcel()">导出 Excel 报表</button>
   <input type="text" id="searchInput" class="form-control w-25" placeholder="按姓名搜索..." oninput="searchHandler()">
 </div>
 
@@ -141,7 +142,18 @@
   function searchHandler() { currentPage = 0; loadUsers(); }
   function resetSearch() { document.getElementById('searchInput').value = ''; currentPage = 0; loadUsers(); }
   function changePage(step) { currentPage += step; loadUsers(); }
+  function exportExcel() {
+    Swal.fire({
+      title: '正在准备报表...',
+      text: '请稍候，Python 正在为你计算数据',
+      icon: 'info',
+      timer: 2000,
+      showConfirmButton: false
+    });
 
+    // 关键：这里直接请求 Python 的端口
+    window.location.href = "http://localhost:8000/download-report";
+  }
   // --- 4. CRUD 操作 (保持你原来的代码) ---
   // 注意：确保 addUser 和 updateUser 里的 fetch 地址是正确的
   // ... (省略你已经写好的逻辑)
