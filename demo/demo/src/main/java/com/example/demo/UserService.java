@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 import java.util.List;
+//意思：查询结果存入Redis,名字叫user
 @Service // 告诉 Spring，这是一个业务逻辑组件
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
@@ -23,10 +25,9 @@ public class UserService {
     private ClassRepository classRepository;
 
     // 对应原来的查询逻辑
+    @Cacheable(value = "users",key = "(#search == null ? 'all' : #search) + '_' + #pageable.pageNumber")
     public Page<User> getAllUsers(String search, Pageable pageable) {
-        if (search != null && !search.isEmpty()) {
-            return userRepository.findByUsernameContainingIgnoreCase(search, pageable);
-        }
+        log.info("【性能损耗】正在从 MySQL 数据库里苦苦寻找数据...");
         return userRepository.findAll(pageable);
     }
 

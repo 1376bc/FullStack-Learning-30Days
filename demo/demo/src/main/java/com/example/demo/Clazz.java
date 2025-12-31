@@ -2,10 +2,12 @@ package com.example.demo;
 
 import jakarta.persistence.*;
 import java.util.List;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "Classes")
-public class Clazz {
+public class Clazz  implements Serializable {
+    private static final long serialVersionUID = 1L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

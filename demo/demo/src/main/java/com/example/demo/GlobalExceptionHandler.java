@@ -1,4 +1,5 @@
 package com.example.demo;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,10 +36,11 @@ public class GlobalExceptionHandler {
 
     // 2. 专门捕获文件过大的错误 (Day 16 的坑)
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
-    public ResponseEntity<Map<String, Object>> handleMaxSize(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("success", false);
-        body.put("message", "图片太大了！请上传 5MB 以内的图片。");
+        String msg = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        body.put("message", msg);
         return ResponseEntity.status(400).body(body);
     }
 }
